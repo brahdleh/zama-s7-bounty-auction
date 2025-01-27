@@ -197,7 +197,7 @@ export const Devnet = ({
           My decrypted private balance is: {decryptedBalance.toString()}
         </dd>
 
-        <dd className="Devnet__dd">Chose an amount to transfer:</dd>
+        <dd className="Devnet__dd">Choose an amount to transfer:</dd>
 
         <div>
           <input

@@ -96,5 +96,8 @@
     "coverage": "hardhat coverage",
     "deploy-sepolia": "hardhat deploy --network sepolia",
     "mint-sepolia": "hardhat mint --amount 42 --network sepolia"
+  },
+  "dependencies": {
+    "solidity-comments": "^0.1.1"
   }
 }
