@@ -38,6 +38,7 @@ contract EncryptedAuction is
     }
 
     Bid[] public allBids;  // Array of all bids
+    mapping(address => euint64) public tokensWon;
     mapping(address => uint256) public bidderIndex; 
     // bidderIndex is 1-based: 0 means no bid. If 1-based, index in `allBids` is idx-1.
 
@@ -172,7 +173,33 @@ contract EncryptedAuction is
         revealedSecret = decryptedValue;
     }
 
-    function finalizeAuction() internal {
-        
+    function finalizeAuction() public {
+        // Assume for now there are always two bidders
+        Bid storage bidOne = allBids[0];
+        Bid storage bidTwo = allBids[1];
+        euint64 encTokensleft = TFHE.asEuint64(totalTokens);
+
+        ebool oneBeatsTwo = TFHE.ge(bidOne.price, bidTwo.price);
+        tokensWon[bidOne.bidder] = TFHE.select(
+            oneBeatsTwo, // If one bid higher than 2
+            TFHE.max(bidOne.quantity, encTokensleft), // One takes their bid first up to max tokens
+            TFHE.max(bidOne.quantity, TFHE.max(TFHE.sub(encTokensleft, bidTwo.quantity), TFHE.asEuint64(0))) // Find out what is left from 2 first
+        );
+        tokensWon[bidTwo.bidder] = TFHE.select(
+            oneBeatsTwo, // If one bid higher than 2
+            TFHE.max(bidTwo.quantity, TFHE.max(TFHE.sub(encTokensleft, bidOne.quantity), TFHE.asEuint64(0))), // Find out what is left from 1 first
+            TFHE.max(bidTwo.quantity, encTokensleft) // Two takes their bid first up to max tokens
+        );
+        /*
+        euint64 encClearingPrice = TFHE.select(
+            oneBeatsTwo, // If one bid higher than 2
+            TFHE.select(TFHE.gt(TFHE.sub(encTokensleft, bidOne.quantity), TFHE.asEuint64(0)), bidTwo.price, bidOne.price), // Take 1s bid price if they took all
+            TFHE.select(TFHE.gt(TFHE.sub(encTokensleft, bidTwo.quantity), TFHE.asEuint64(0)), bidOne.price, bidTwo.price) // Take 2s bid if they took it all
+        );
+        */
+        transfer(bidOne.bidder, tokensWon[bidOne.bidder]);
+        transfer(bidTwo.bidder, tokensWon[bidTwo.bidder]);
+
+        finalized = true;
     }
 }

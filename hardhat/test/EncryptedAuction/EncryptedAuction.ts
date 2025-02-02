@@ -127,4 +127,65 @@ describe("EncryptedAuction", function () {
     expect(storedBid.totalDeposit).to.equal(totalCost1 + totalCost2);
     expect(storedBid.exists).to.be.true;
   });
+
+  it("Should allow auction finalization", async function () {
+    // Move into the valid time window for the auction
+    await ethers.provider.send("evm_mine", []);
+
+    // First bid from Alice
+    const rawQuantity1 = 5;
+    const rawPrice1 = 2;
+    const totalCost1 = rawQuantity1 * rawPrice1;
+
+    const quantity1 = this.fhevm.createEncryptedInput(this.contractAddress, this.signers.alice.address);
+    quantity1.add64(rawQuantity1);
+    const encQuantity1 = await quantity1.encrypt();
+
+    const price1 = this.fhevm.createEncryptedInput(this.contractAddress, this.signers.alice.address);
+    price1.add64(rawPrice1);
+    const encPrice1 = await price1.encrypt();
+
+    await this.auction
+      .connect(this.signers.alice)
+      ["placeBid(bytes32,bytes32,bytes,bytes)"](
+        encQuantity1.handles[0],
+        encPrice1.handles[0],
+        encQuantity1.inputProof,
+        encPrice1.inputProof,
+        { value: totalCost1 }
+      );
+
+    // Now Second bid from a different wallet
+    const rawQuantity2 = 10;
+    const rawPrice2 = 1;
+    const totalCost2 = rawQuantity2 * rawPrice2; // 10
+
+    const quantity2 = this.fhevm.createEncryptedInput(this.contractAddress, this.signers.bob.address);
+    quantity2.add64(rawQuantity2);
+    const encQuantity2 = await quantity2.encrypt();
+
+    const price2 = this.fhevm.createEncryptedInput(this.contractAddress, this.signers.bob.address);
+    price2.add64(rawPrice2);
+    const encPrice2 = await price2.encrypt();
+
+    await this.auction
+      .connect(this.signers.bob)
+      ["placeBid(bytes32,bytes32,bytes,bytes)"](
+        encQuantity2.handles[0],
+        encPrice2.handles[0],
+        encQuantity2.inputProof,
+        encPrice2.inputProof,
+        { value: totalCost2 }
+      );
+    
+    //await ethers.provider.send("evm_increaseTime", [5000])
+    //await ethers.provider.send("evm_mine", []);
+
+    await this.auction.connect(this.signers.alice)["finalizeAuction()"]();
+
+    
+    //const finalized = await this.auction.finalized();
+    //expect(finalized).to.equal(true);
+
+  });
 });
