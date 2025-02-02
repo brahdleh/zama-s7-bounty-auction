@@ -16,10 +16,9 @@ contract MyConfidentialERC20 is
     SepoliaZamaGatewayConfig,
     GatewayCaller,
     ConfidentialERC20Mintable
-{
+{   
     // @note `SECRET` is not so secret, since it is trivially encrypted and just to have a decryption test
     euint64 internal immutable SECRET;
-
     // @note `revealedSecret` will hold the decrypted result once the Gateway will relay the decryption of `SECRET`
     uint64 public revealedSecret;
 

@@ -105,6 +105,7 @@ export const Devnet = ({
 
   useEffect(() => {
     getHandleBalance();
+    setChosenAddress(account);
   }, [account, provider, contractAddress]);
 
   const encrypt = async (val: bigint) => {
